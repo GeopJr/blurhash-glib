@@ -1,8 +1,8 @@
 image: fedora:39
 
 stages:
-  - build
   - lint
+  - build
 
 .build-default:
   before_script:
