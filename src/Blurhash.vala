@@ -174,80 +174,83 @@ namespace Blurhash {
 		return res;
 	}
 
-	// WIP but also I don't really care about it myself
-	// if anyone wants to take over, feel free to.
-	//  private static int encode_dc (ColorSRGB rgb) {
-	//  	int rounded_r = linear_to_srgb (rgb.r);
-	//  	int rounded_g = linear_to_srgb (rgb.g);
-	//  	int rounded_b = linear_to_srgb (rgb.b);
-	//  	return (rounded_r << 16) + (rounded_g << 8) + rounded_b;
-	//  }
+	private static int encode_dc (ColorSRGB rgb) {
+		int rounded_r = linear_to_srgb (rgb.r);
+		int rounded_g = linear_to_srgb (rgb.g);
+		int rounded_b = linear_to_srgb (rgb.b);
+		return (rounded_r << 16) + (rounded_g << 8) + rounded_b;
+	}
 
-	//  private static int encode_ac (ColorSRGB rgb, float maximum_value) {
-	//  	int quant_r = (int)Math.fmaxf(0f, Math.fminf(18f, Math.floorf(sign_pow (rgb.r / maximum_value, 0.5f) * 9f + 9.5f)));
-	//  	int quant_g = (int)Math.fmaxf(0f, Math.fminf(18f, Math.floorf(sign_pow (rgb.g / maximum_value, 0.5f) * 9f + 9.5f)));
-	//  	int quant_b = (int)Math.fmaxf(0f, Math.fminf(18f, Math.floorf(sign_pow (rgb.b / maximum_value, 0.5f) * 9f + 9.5f)));
+	private static int encode_ac (ColorSRGB rgb, float maximum_value) {
+		int quant_r = (int)Math.fmaxf (0f, Math.fminf (18f, Math.floorf (sign_pow (rgb.r / maximum_value, 0.5f) * 9f + 9.5f)));
+		int quant_g = (int)Math.fmaxf (0f, Math.fminf (18f, Math.floorf (sign_pow (rgb.g / maximum_value, 0.5f) * 9f + 9.5f)));
+		int quant_b = (int)Math.fmaxf (0f, Math.fminf (18f, Math.floorf (sign_pow (rgb.b / maximum_value, 0.5f) * 9f + 9.5f)));
 
-	//  	return quant_r * 19 * 19 + quant_g * 19 + quant_b;
-	//  }
+		return quant_r * 19 * 19 + quant_g * 19 + quant_b;
+	}
 
-	//  private static ColorSRGB multiply_basis_function (int x_component, int y_component, int width, int height, uint8[] pixels, int bytes_per_row) {
-	//  	float r = 0, g = 0, b = 0;
-	//  	float normalisation = (x_component == 0 && y_component == 0) ? 1 : 2;
+	private static ColorSRGB multiply_basis_function (int x_component, int y_component, int width, int height, uint8[] data, int bytes_per_row) {
+		float r = 0;
+		float g = 0;
+		float b = 0;
+		float normalisation = (x_component == 0 && y_component == 0) ? 1f : 2f;
 
-	//  	for(int y = 0; y < height; y++) {
-	//  		for(int x = 0; x < width; x++) {
-	//  			float basis = (float) (Math.cos ((Math.PI * x_component * x / width)) * Math.cos ((Math.PI * y_component * y / height)));
-	//  			r += basis * srgb_to_linear (pixels[3 * x + 0 + y * bytes_per_row]);
-	//  			g += basis * srgb_to_linear (pixels[3 * x + 1 + y * bytes_per_row]);
-	//  			b += basis * srgb_to_linear (pixels[3 * x + 2 + y * bytes_per_row]);
-	//  		}
-	//  	}
+		for (int y = 0; y < height; y++) {
+			int ybpr = y * bytes_per_row;
+			double y_cos = Math.cos ((Math.PI * y_component * y / height));
 
-	//  	float scale = normalisation / (width * height);    
-	//  	return ColorSRGB () {
-	//  		r = r * scale,
-	//  		g = g * scale,
-	//  		b = b * scale
-	//  	};
-	//  }
+			for (int x = 0; x < width; x++) {
+				float basis = (float) (Math.cos (Math.PI * x_component * x / width) * y_cos);
+				r += basis * srgb_to_linear (data[3 * x + ybpr]);
+				g += basis * srgb_to_linear (data[3 * x + 1 + ybpr]);
+				b += basis * srgb_to_linear (data[3 * x + 2 + ybpr]);
+			}
+		}
 
-	//  public string? encode (int x_components, int y_components, int width, int height, uint8[] pixels, int bytes_per_row) {
-	//  	if(x_components < 1 || x_components > 9 || y_components < 1 || y_components > 9) return null;
+		float scale = normalisation / (width * height);
+		return ColorSRGB () {
+			r = r * scale,
+			g = g * scale,
+			b = b * scale
+		};
+	}
 
-	//  	int total_items = y_components * x_components;
-	//  	ColorSRGB[] factors = new ColorSRGB[total_items];
-	//  	for(int y = 0; y < y_components; y++) {
-	//  		for(int x = 0; x < x_components; x++) {
-	//  			factors[(y * x_components) + x] = multiply_basis_function (x, y, width, height, pixels, bytes_per_row);
-	//  		}
-	//  	}
+	public string? encode_from_data (int x_components, int y_components, int width, int height, uint8[] data, int bytes_per_row) {
+		if (x_components < 1 || x_components > 9 || y_components < 1 || y_components > 9) return null;
 
-	//  	int size_flag = (x_components - 1) + (y_components - 1) * 9;
-	//  	string res = Base83.encode (size_flag, 1);
+		int total_items = y_components * x_components;
+		ColorSRGB[] factors = new ColorSRGB[total_items];
+		for (int y = 0; y < y_components; y++) {
+			for (int x = 0; x < x_components; x++) {
+				factors[(y * x_components) + x] = multiply_basis_function (x, y, width, height, data, bytes_per_row);
+			}
+		}
 
-	//  	float maximum_value;
-	//  	if(total_items > 1) {
-	//  		float actual_maximum_value = 0;
-	//  		for(int y = 1; y < total_items; y++) {
-	//  			actual_maximum_value = Math.fmaxf(Math.fabsf(factors[y].r), actual_maximum_value);
-	//  			actual_maximum_value = Math.fmaxf(Math.fabsf(factors[y].g), actual_maximum_value);
-	//  			actual_maximum_value = Math.fmaxf(Math.fabsf(factors[y].b), actual_maximum_value);
-	//  		}
+		int size_flag = (x_components - 1) + (y_components - 1) * 9;
+		string res = Base83.encode (size_flag, 1);
 
-	//  		int quantised_maximum_value = (int)Math.fmaxf(0, Math.fminf(82, Math.floorf(actual_maximum_value * 166 - 0.5f)));
-	//  		maximum_value = ((float) quantised_maximum_value + 1) / 166;
-	//  		res += Base83.encode (quantised_maximum_value, 1);
-	//  	} else {
-	//  		maximum_value = 1f;
-	//  		res += "0";
-	//  	}
+		float maximum_value;
+		if (total_items > 1) {
+			float actual_maximum_value = 0f;
+			for (int y = 1; y < total_items; y++) {
+				actual_maximum_value = Math.fmaxf (Math.fabsf (factors[y].r), actual_maximum_value);
+				actual_maximum_value = Math.fmaxf (Math.fabsf (factors[y].g), actual_maximum_value);
+				actual_maximum_value = Math.fmaxf (Math.fabsf (factors[y].b), actual_maximum_value);
+			}
 
-	//  	res += Base83.encode (encode_dc (factors[0]), 4);
-	//  	for(int y = 1; y < total_items; y++) {
-	//  		res += Base83.encode (encode_ac (factors[y], maximum_value), 2);
-	//  	}
+			int quantised_maximum_value = (int)Math.fmaxf (0, Math.fminf (82, Math.floorf (actual_maximum_value * 166f - 0.5f)));
+			maximum_value = ((float) quantised_maximum_value + 1f) / 166f;
+			res += Base83.encode (quantised_maximum_value, 1);
+		} else {
+			maximum_value = 1f;
+			res += "0";
+		}
 
-	//  	return res;
-	//  }
+		res += Base83.encode (encode_dc (factors[0]), 4);
+		for (int y = 1; y < total_items; y++) {
+			res += Base83.encode (encode_ac (factors[y], maximum_value), 2);
+		}
+
+		return res;
+	}
 }
