@@ -24,8 +24,6 @@ pkgconfig_deps = [
 
 deps = [
 	pkgconfig_deps,
-	dependency('gdk-pixbuf-2.0'),
-
 	cc.find_library('m', required: true)
 ]
 
