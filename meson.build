@@ -4,7 +4,7 @@ api_version = '1'
 g_ir_compiler = find_program('g-ir-compiler', required: false)
 pkgconfig = import('pkgconfig')
 api_name = 'blurhash-glib-' + api_version
-gir_name = api_name + '.gir'
+gir_name = 'blurhash-' + api_version + '.gir'
 typelib_name = api_name + '.typelib'
 cc = meson.get_compiler('c')
 
@@ -29,16 +29,6 @@ deps = [
 
 subdir('src')
 subdir('tests')
-
-if g_ir_compiler.found()
-	custom_target('blurhash-glib typelib',
-		command: [g_ir_compiler, '--output', '@OUTPUT@', meson.current_build_dir() / gir_name],
-		output: typelib_name,
-		depends: blurhash_lib,
-		install: true,
-		install_dir: get_option('libdir') / 'girepository-1.0'
-	)
-endif
 
 pkgconfig.generate(
 	blurhash_lib,
