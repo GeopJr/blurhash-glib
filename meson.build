@@ -32,8 +32,7 @@ subdir('tests')
 
 if g_ir_compiler.found()
 	custom_target('blurhash-glib typelib',
-		command: [g_ir_compiler, '--output', '@OUTPUT@', '@INPUT@'],
-		input: meson.current_build_dir() / gir_name,
+		command: [g_ir_compiler, '--output', '@OUTPUT@', meson.current_build_dir() / gir_name],
 		output: typelib_name,
 		depends: blurhash_lib,
 		install: true,
