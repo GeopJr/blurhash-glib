@@ -24,6 +24,7 @@ fedora-x86_64:
       glib2-devel
       gobject-introspection-devel
       meson
+      valac
 
 lint:
   image: "valalang/lint:latest"
