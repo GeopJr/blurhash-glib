@@ -1,0 +1,9 @@
+_ignore
+build
+build.sh
+subprojects/libhandy-*
+subprojects/packagecache
+*~
+builddir
+*.snap
+.flatpak-builder

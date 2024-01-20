@@ -1,0 +1,32 @@
+image: fedora:39
+
+stages:
+	- build
+	- lint
+
+.build-default:
+	before_script:
+		- dnf install -y ${FEDORA_DEPS}
+		- export PATH="$PATH:$HOME/.local/bin"
+	script:
+		- meson setup --prefix /usr builddir .
+		- meson compile -C builddir
+		- meson test -C builddir
+		- meson install -C builddir
+
+fedora-x86_64:
+	extends: .build-default
+	stage: build
+	needs: []
+	variables:
+		FEDORA_DEPS:
+			gcc
+			glib2-devel
+			gobject-introspection-devel
+			meson
+
+lint:
+	image: "valalang/lint:latest"
+	stage: lint
+	script:
+		- io.elementary.vala-lint -c vala-lint.conf
